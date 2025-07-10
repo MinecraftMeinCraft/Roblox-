@@ -1,0 +1,137 @@
+-- Roblox+ 6.0 - Arch (Text Input & Admin Utility Edition)
+-- Streamlined & UI-friendly
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+local Window = Rayfield:CreateWindow({
+   Name = "Roblox+ 6.0 - Arch",
+   LoadingTitle = "Roblox+",
+   LoadingSubtitle = "Arch Edition",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "RobloxPlus",
+      FileName = "config"
+   },
+   KeySystem = false,
+})
+
+local UtilTab = Window:CreateTab("Utilities", "settings")
+
+-- WalkSpeed Input
+UtilTab:CreateInput({
+   Name = "WalkSpeed",
+   CurrentValue = "16",
+   PlaceholderText = "Enter WalkSpeed",
+   RemoveTextAfterFocusLost = false,
+   Flag = "WalkSpeedInput",
+   Callback = function(val)
+      local num = tonumber(val)
+      if num and LocalPlayer.Character then
+         LocalPlayer.Character.Humanoid.WalkSpeed = num
+      end
+   end,
+})
+
+-- JumpPower Input
+UtilTab:CreateInput({
+   Name = "JumpPower",
+   CurrentValue = "50",
+   PlaceholderText = "Enter JumpPower",
+   RemoveTextAfterFocusLost = false,
+   Flag = "JumpPowerInput",
+   Callback = function(val)
+      local num = tonumber(val)
+      if num and LocalPlayer.Character then
+         LocalPlayer.Character.Humanoid.JumpPower = num
+      end
+   end,
+})
+
+-- NoClip Toggle
+local noClip = false
+UtilTab:CreateToggle({
+   Name = "NoClip",
+   CurrentValue = false,
+   Flag = "NoClipToggle",
+   Callback = function(val)
+      noClip = val
+   end,
+})
+
+game:GetService("RunService").Stepped:Connect(function()
+   if noClip and LocalPlayer.Character then
+      for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+         if part:IsA("BasePart") then
+            part.CanCollide = false
+         end
+      end
+   end
+end)
+
+-- Teleport Tool
+UtilTab:CreateButton({
+   Name = "Give Teleport Tool",
+   Callback = function()
+      local tool = Instance.new("Tool")
+      tool.RequiresHandle = false
+      tool.Name = "TeleportTool"
+      tool.Activated:Connect(function()
+         local m = LocalPlayer:GetMouse()
+         if m.Hit then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(m.Hit.Position + Vector3.new(0, 3, 0))
+         end
+      end)
+      tool.Parent = LocalPlayer.Backpack
+   end,
+})
+
+-- Misc Actions
+UtilTab:CreateButton({ Name = "Break Joints", Callback = function() LocalPlayer.Character:BreakJoints() end })
+UtilTab:CreateButton({ Name = "Kill Self", Callback = function() LocalPlayer.Character.Humanoid.Health = 0 end })
+UtilTab:CreateButton({ Name = "Destroy Player", Callback = function() LocalPlayer:Destroy() end })
+
+-- Kick message input + kicker
+local kickMsg = "You were kicked!"
+UtilTab:CreateInput({
+   Name = "Kick Message",
+   CurrentValue = kickMsg,
+   PlaceholderText = "Enter kick message",
+   RemoveTextAfterFocusLost = false,
+   Flag = "KickMsg",
+   Callback = function(text)
+      kickMsg = text
+   end,
+})
+UtilTab:CreateButton({
+   Name = "Kick Yourself",
+   Callback = function()
+      LocalPlayer:Kick(kickMsg)
+   end,
+})
+
+-- === ADMIN SCRIPT SELECTOR ===
+local selectedAdmin = "Infinite Yield"
+UtilTab:CreateSection("Weird Stuff")
+UtilTab:CreateDropdown({
+   Name = "Admin Tool",
+   Options = {"Infinite Yield", "Nameless Admin"},
+   CurrentOption = {"Infinite Yield"},
+   MultipleOptions = false,
+   Flag = "AdminDropdown",
+   Callback = function(Options)
+      selectedAdmin = Options[1]
+   end,
+})
+
+UtilTab:CreateButton({
+   Name = "Execute Admin Script",
+   Callback = function()
+      if selectedAdmin == "Infinite Yield" then
+         loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+      elseif selectedAdmin == "Nameless Admin" then
+         loadstring(game:HttpGet("https://raw.githubusercontent.com/ltseverydayyou/Nameless-Admin/main/NA%20testing.lua"))()
+      end
+   end,
+})
