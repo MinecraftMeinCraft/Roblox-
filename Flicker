@@ -1,0 +1,666 @@
+--[[
+   WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local ESPEnabled = false
+local ESPObjects = {}
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local CharName = LocalPlayer:FindFirstChild("CharName") and LocalPlayer.CharName.Value or "Unknown"
+local UserName = LocalPlayer.Name
+
+local Window = Rayfield:CreateWindow({
+   Name = "✨ Flicker Premium Hub",
+   Icon = 0,
+   LoadingTitle = "Flicker Premium",
+   LoadingSubtitle = "by Serenity",
+   Theme = "Default",
+   DisableRayfieldPrompts = false,
+   DisableBuildWarnings = false,
+   ConfigurationSaving = {
+      Enabled = true,
+      FileName = "FlickerPremiumSave"
+   },
+   KeySystem = false,
+  
+})
+
+-- 🌐 Homepage Tab
+local HomeTab = Window:CreateTab("🏠 Home", nil)
+HomeTab:CreateSection("Your Info")
+
+-- Local player info
+HomeTab:CreateParagraph({
+    Title = "👋 Hello, " .. CharName .. " (" .. UserName .. ")",
+    Content = "Welcome to Flicker Premium!"
+})
+
+-- Section for other players
+local PlayersSection = HomeTab:CreateSection("📋 Alive Players")
+
+-- Store current paragraphs
+local currentParagraphs = {}
+
+-- Function to clear all old rectangles
+local function ClearPlayerParagraphs()
+    for _, ui in pairs(currentParagraphs) do
+        if typeof(ui.Destroy) == "function" then
+            ui:Destroy()
+        end
+    end
+    currentParagraphs = {}
+end
+
+-- Function to refresh UI with only alive players
+function RefreshVisiblePlayers()
+    ClearPlayerParagraphs()
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Team and player.Team.Name == "Alive" then
+            local charName = "Unknown"
+            if player:FindFirstChild("CharName") then
+                charName = player.CharName.Value
+            end
+
+            local team = player.Team.Name
+            local paragraph = HomeTab:CreateParagraph({
+                Title = charName,
+                Content = "Team: " .. team .. "\nUser: " .. player.Name
+            })
+
+            table.insert(currentParagraphs, paragraph)
+        end
+    end
+end
+
+
+
+-- 🔄 Manual refresh button
+HomeTab:CreateButton({
+    Name = "🔄 Refresh Player List",
+    Callback = function()
+        RefreshVisiblePlayers()
+    end
+})
+
+
+-- 🚀 Main Tab
+local MainTab = Window:CreateTab("🚀 Main", nil)
+
+MainTab:CreateSection("👢 Stealth Features") -- Label above invis toggle
+MainTab:CreateParagraph({Title = "Fake Leave / Invisibility", Content = "Makes you invisible by seating trick."})
+
+local invis_on = false
+local invischair = nil
+
+local invisToggle = MainTab:CreateToggle({
+   Name = "👢 Fake Leave / Invisible",
+   CurrentValue = false,
+   Callback = function(Value)
+      invis_on = Value
+
+      if invis_on then
+         local savedpos = Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+         wait()
+         Players.LocalPlayer.Character:MoveTo(Vector3.new(-25.95, 84, 3537.55))
+         wait(0.15)
+
+         invischair = Instance.new("Seat", workspace)
+         invischair.Anchored = false
+         invischair.CanCollide = false
+         invischair.Name = "invischair"
+         invischair.Transparency = 1
+         invischair.Position = Vector3.new(-25.95, 84, 3537.55)
+
+         local weld = Instance.new("Weld", invischair)
+         weld.Part0 = invischair
+         weld.Part1 = Players.LocalPlayer.Character:FindFirstChild("Torso") or Players.LocalPlayer.Character:FindFirstChild("UpperTorso")
+
+         wait()
+         invischair.CFrame = savedpos
+
+         game.StarterGui:SetCore("SendNotification", {
+            Title = "Invis On",
+            Duration = 1,
+            Text = "",
+         })
+      else
+         if invischair then
+            invischair:Destroy()
+            invischair = nil
+         end
+
+         game.StarterGui:SetCore("SendNotification", {
+            Title = "Invis Off",
+            Duration = 1,
+            Text = "",
+         })
+      end
+   end,
+})
+
+MainTab:CreateSection("Team Switch 🧍‍♂️")
+
+-- All team switch buttons
+MainTab:CreateButton({
+   Name = "👻 See Ghosts",
+   Callback = function()
+      Players.LocalPlayer.Team = game:GetService("Teams"):FindFirstChild("Dead")
+   end,
+})
+
+MainTab:CreateButton({
+   Name = "🙈 Unsee Ghosts",
+   Callback = function()
+      Players.LocalPlayer.Team = game:GetService("Teams"):FindFirstChild("Alive")
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "🌀 Stuck In Loading",
+   CurrentValue = false,
+   Callback = function(on)
+      if on then
+         task.spawn(function()
+            while on do
+               Players.LocalPlayer.Team = game.Teams:FindFirstChild("Loading")
+               wait(0.5)
+            end
+         end)
+      end
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "⏳ Stuck In Waiting",
+   CurrentValue = false,
+   Callback = function(on)
+      if on then
+         task.spawn(function()
+            while on do
+               Players.LocalPlayer.Team = game.Teams:FindFirstChild("Waiting")
+               wait(0.5)
+            end
+         end)
+      end
+   end,
+})
+MainTab:CreateSection("Fun Scripts 🎮")
+
+
+
+-- Fun scripts
+MainTab:CreateButton({
+   Name = "💫 Energize GUI",
+   Callback = function()
+      loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-Energize-Remake-23335"))()
+   end,
+})
+
+MainTab:CreateButton({
+   Name = "😈 Freaky GUI",
+   Callback = function()
+      loadstring(game:HttpGet("https://rawscripts.net/raw/Universal-Script-freaky-animations-34629"))()
+   end,
+})
+
+MainTab:CreateButton({
+   Name = "🤣 Jerky Off",
+   Callback = function()
+      loadstring(game:HttpGet("https://pastefy.app/wa3v2Vgm/raw"))()
+   end,
+})
+
+
+-- Add the tab
+local EvilTab = Window:CreateTab("☠️ Evil Detector", nil)
+EvilTab:CreateSection("Suspicious & Team Message Logs")
+
+-- Variables
+local evilTriggers = {"mur", "muffin", "oh"}
+local messageLog = {}
+local deadTeamLog = {}
+local useCharName = false
+
+-- Message panels
+local suspiciousBox = EvilTab:CreateParagraph({
+	Title = "Suspicious Messages",
+	Content = "No suspicious messages yet."
+})
+
+local deadBox = EvilTab:CreateParagraph({
+	Title = "Dead Team Messages",
+	Content = "No messages from the Dead team yet."
+})
+
+-- Toggle for CharName
+EvilTab:CreateToggle({
+	Name = "Use CharName",
+	CurrentValue = false,
+	Callback = function(v)
+		useCharName = v
+		updateMessageBoxes()
+	end,
+})
+
+-- Get display name
+local function getDisplayName(player)
+	local charName = player:FindFirstChild("CharName")
+	if useCharName and charName and charName:IsA("StringValue") then
+		return charName.Value
+	end
+	return player.Name
+end
+
+-- Count trigger words
+local function countTriggers(msg)
+	local count = 0
+	local lower = msg:lower()
+	for _, trigger in ipairs(evilTriggers) do
+		local _, matches = lower:gsub(trigger, "")
+		count = count + matches
+	end
+	return count
+end
+
+-- Update both panels
+function updateMessageBoxes()
+	-- Suspicious
+	local suspOut = {}
+	for playerName, logs in pairs(messageLog) do
+		local player = Players:FindFirstChild(playerName)
+		local displayName = player and getDisplayName(player) or playerName
+		for _, msg in ipairs(logs) do
+			table.insert(suspOut, "@"..displayName.." said: "..msg)
+		end
+	end
+	suspiciousBox:Set({
+		Title = "Suspicious Messages",
+		Content = #suspOut > 0 and table.concat(suspOut, "\n") or "No suspicious messages yet."
+	})
+
+	-- Dead team
+	local deadOut = {}
+	for playerName, logs in pairs(deadTeamLog) do
+		local player = Players:FindFirstChild(playerName)
+		local displayName = player and getDisplayName(player) or playerName
+		for _, msg in ipairs(logs) do
+			table.insert(deadOut, "@"..displayName.." (Dead): "..msg)
+		end
+	end
+	deadBox:Set({
+		Title = "Dead Team Messages",
+		Content = #deadOut > 0 and table.concat(deadOut, "\n") or "No messages from the Dead team yet."
+	})
+end
+
+-- Process each message
+local function process(player, msg)
+	if countTriggers(msg) > 0 then
+		messageLog[player.Name] = messageLog[player.Name] or {}
+		table.insert(messageLog[player.Name], msg)
+	end
+
+	if player.Team and player.Team.Name == "Dead" then
+		deadTeamLog[player.Name] = deadTeamLog[player.Name] or {}
+		table.insert(deadTeamLog[player.Name], msg)
+	end
+
+	updateMessageBoxes()
+end
+
+-- Hook chat
+local function hookPlayer(player)
+	player.Chatted:Connect(function(msg)
+		process(player, msg)
+	end)
+end
+
+-- Hook all players
+for _, player in ipairs(Players:GetPlayers()) do
+	hookPlayer(player)
+end
+Players.PlayerAdded:Connect(hookPlayer)
+
+-- 📝 Notes Tab
+local NotesTab = Window:CreateTab("📝 Notes", nil)
+NotesTab:CreateSection("Spam Notes to CharName")
+
+local charTarget, noteMessage, spamming = "", "", false
+
+NotesTab:CreateInput({
+   Name = "CharName (Display Name)",
+   PlaceholderText = "Type their Flicker CharName",
+   Callback = function(text) charTarget = text end
+})
+
+NotesTab:CreateInput({
+   Name = "Note Text",
+   PlaceholderText = "Note you want to send",
+   Callback = function(text) noteMessage = text end
+})
+
+NotesTab:CreateToggle({
+   Name = "📨 Start Note Spam",
+   CurrentValue = false,
+   Callback = function(Value)
+      spamming = Value
+      if spamming then
+         task.spawn(function()
+            while spamming do
+               for _, player in pairs(Players:GetPlayers()) do
+                  local char = player:FindFirstChild("CharName")
+                  if char and char.Value == charTarget then
+                     game:GetService("ReplicatedStorage").Networking.UpdateNote:FireServer(noteMessage, char.Parent)
+                     break
+                  end
+               end
+               wait(0.5)
+            end
+         end)
+      end
+   end
+})
+
+-- ⚙️ Animation Tab
+local AnimationTab = Window:CreateTab("⚙️ Animations", nil)
+
+AnimationTab:CreateSection("💀 Cursed #1") -- [NEW Section]
+
+-- Dictionary to keep track of animation tracks
+local animTracks = {}
+
+-- Create a toggle for the group of animations
+AnimationTab:CreateToggle({
+   Name = "💥 Multi-Animation Toggle",
+   CurrentValue = false,
+   Callback = function(Value)
+      local humanoid = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+      if humanoid then
+         -- Animation IDs for No Legs, Look, Tilt Head, Floating Legs
+         local animations = {
+            {name = "nolegs", id = 248336459},
+            {name = "Look", id = 283119655},
+            {name = "Tilt head", id = 283545583},
+            {name = "FloatingHead", id = 121572214}
+         }
+
+         -- Loop through the animations and toggle them on or off
+         for _, animation in ipairs(animations) do
+            local anim = Instance.new("Animation")
+            anim.AnimationId = "rbxassetid://" .. animation.id
+            local animTrack = humanoid:LoadAnimation(anim)
+            
+            -- Store the animation track in the dictionary
+            animTracks[animation.name] = animTrack
+
+            if Value then
+               -- When the toggle is on, play the animation
+               animTrack:Play()
+               print(animation.name .. " is now playing.")
+            else
+               -- When the toggle is off, stop the animation
+               animTrack:Stop()
+               print(animation.name .. " is now stopped.")
+            end
+         end
+      else
+         print("Humanoid not found!")
+      end
+   end,
+})
+
+-- ⚙️ Cursed Animations Section
+AnimationTab:CreateSection("🌀 All Animations Toggles") -- [NEW Section with individual toggles]
+
+-- Define the list of all animations with their IDs
+local animations = {
+    {name = "Crouch", id = 287325678},
+    {name = "Weird", id = 248336677},
+    {name = "nolegs", id = 248336459},
+    {name = "Poseit", id = 248336163},
+    {name = "PlungerThrow", id = 259438880},
+    {name = "Slap", id = 273717479},
+    {name = "LayBetter", id = 282574440},
+    {name = "Look", id = 283119655},
+    {name = "Tilt head", id = 283545583},
+    {name = "Kickboard", id = 160737244},
+    {name = "Sit2", id = 168138731},
+    {name = "SCREAM1!1@3$", id = 180611870},
+    {name = "take a dunki", id = 182724289},
+    {name = "Lay down", id = 182749109},
+    {name = "Happi Dance Walk", id = 248335946},
+    {name = "FloatingHead", id = 121572214},
+    {name = "BALLOON 02", id = 148840371},
+    {name = "BALLOONFLOAT", id = 148831003},
+    {name = "SmellyRun", id = 30235165},
+    {name = "BigSwordHit", id = 27441775},
+    {name = "GOAL", id = 28488254},
+    {name = "Trident Stab", id = 30704021},
+    {name = "HoldStaff", id = 27758613},
+    {name = "UpperCut", id = 28160593},
+    {name = "scared", id = 180612465},
+    {name = "StaffUp", id = 27432691},
+    {name = "StaffSpin", id = 27763939},
+    {name = "Partyanimate", id = 33796059},
+    {name = "PimpSlap", id = 30188122},
+    {name = "Dance", id = 27789359},
+    {name = "TwoHandSwing", id = 32659706},
+    {name = "TwohandSword", id = 27432559},
+    {name = "BarrelThrow", id = 31020869},
+    {name = "BearHug", id = 27432686},
+    {name = "SwrdSwinJump", id = 32659699},
+    {name = "WalkStaff", id = 27759788},
+    {name = "Moonwalk", id = 30196114},
+    {name = "SoccerWalk", id = 28440069},
+    {name = "HeadThrow", id = 35154961},
+    {name = "Beatbox..?", id = 45504977},
+    {name = "Stanky Legs", id = 87986341},
+    {name = "Taunt", id = 74901237},
+    {name = "FrisbThrow", id = 174347769},
+    {name = "BarrelRoll", id = 136801964},
+    {name = "MaceSwing", id = 168801331},
+    {name = "idek taunt", id = 168744201},
+    {name = "GrenadeLoop", id = 168160500},
+    {name = "FireBreath", id = 163209885},
+    {name = "CymbalSlam", id = 162250536},
+    {name = "Hold dat", id = 161268368},
+    {name = "Bow Reload", id = 159934882},
+    {name = "Hold dat 2", id = 225975820},
+    {name = "Keyframeloop", id = 54144120},
+    {name = "StartRest6", id = 75416338},
+    {name = "Roar", id = 75354915},
+    {name = "SimpleSlash", id = 74799600},
+    {name = "Summon", id = 93693205},
+    {name = "ZombieAttack", id = 180416148},
+    {name = "ZombieIdle", id = 183294396},
+    {name = "Test1", id = 54145508},
+    {name = "Superman?", id = 160725720},
+    {name = "Drink", id = 163203876},
+    {name = "GravitySlam", id = 33169573},
+    {name = "SoccerKick", id = 28458752},
+    {name = "Slash", id = 28090109},
+    {name = "SwordThrust", id = 32659703},
+    {name = "Drink/Salute", id = 28492456},
+    {name = "Fire Wall", id = 32326246},
+    {name = "KickBack", id = 33686061},
+    {name = "Chop", id = 33169596},
+    {name = "Launch Hand", id = 33323745},
+    {name = "TridentThrow", id = 30704030},
+    {name = "Saxtest", id = 30257281},
+    {name = "Slingshot", id = 33248324},
+    {name = "Hornblow", id = 29349343},
+    {name = "Throw", id = 28604759},
+    {name = "StaffDuoHit", id = 27763344},
+    {name = "FireRing", id = 32326245}
+}
+
+-- Create toggles for all animations
+for _, animation in ipairs(animations) do
+    AnimationTab:CreateToggle({
+        Name = "🌀 " .. animation.name,
+        CurrentValue = false,
+        Callback = function(Value)
+            local humanoid = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid")
+            if humanoid then
+                local anim = Instance.new("Animation")
+                anim.AnimationId = "rbxassetid://" .. animation.id
+                local animTrack = humanoid:LoadAnimation(anim)
+
+                -- Store the animation track in the dictionary
+                animTracks[animation.name] = animTrack
+
+                if Value then
+                    animTrack:Play()
+                    print(animation.name .. " is now playing.")
+                else
+                    animTrack:Stop()
+                    print(animation.name .. " is now stopped.")
+                end
+            else
+                print("Humanoid not found!")
+            end
+        end
+    })
+end
+
+
+-- 🧭 Teleports Tab
+local TeleportsTab = Window:CreateTab("🧭 Teleports", nil)
+TeleportsTab:CreateSection("📍 Teleport Locations")
+
+local locations = {
+   ["Forest"] = Vector3.new(591.09, 17.00, 70.79),
+   ["Farmstead"] = Vector3.new(107.62, 5.00, 59.31),
+   ["House"] = Vector3.new(-75.09, 4.70, 36.09),
+   ["Sewers"] = Vector3.new(-256.51, 12.51, 102.43),
+   ["Hidden Spawn Plate"] = Vector3.new(-54.25, 5.00, 251.68),
+   ["Role Place"] = Vector3.new(-180.16, 30.33, 302.15),
+   ["Endgame Screen"] = Vector3.new(-175.65, 79.45, 306.61),
+   ["Hospital"] = Vector3.new(423.57, 16.43, 16.09),
+   ["Area 8"] = Vector3.new(-443.03, 38.63, 0.65)
+}
+
+for name, pos in pairs(locations) do
+   TeleportsTab:CreateButton({
+      Name = name,
+      Callback = function()
+         Players.LocalPlayer.Character:SetPrimaryPartCFrame(CFrame.new(pos))
+      end,
+   })
+end
+
+-- ⚙️ Misc Tab
+local MiscTab = Window:CreateTab("⚙️ Misc + Visuals", nil)
+
+MiscTab:CreateSection("🔮 Visual Settings") -- [NEW Label]
+MiscTab:CreateParagraph({Title = "Visual Effects", Content = "Toggle on ESP, Lights, and more."})
+
+MiscTab:CreateToggle({
+   Name = "🔮 ESP",
+   CurrentValue = false,
+   Callback = function(Value)
+      ESPEnabled = Value
+      UpdateESP()
+   end,
+})
+
+
+MiscTab:CreateToggle({
+   Name = "💡 Light Up",
+   CurrentValue = false,
+   Callback = function(Value)
+      LightUpEnabled = Value
+      local hrp = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+      if hrp then
+         if Value then
+            PlayerLight = Instance.new("PointLight", hrp)
+            PlayerLight.Range = 30
+            PlayerLight.Brightness = 10
+            PlayerLight.Color = Color3.new(1, 1, 1)
+         elseif PlayerLight then
+            PlayerLight:Destroy()
+         end
+      end
+   end,
+})
+
+
+
+MiscTab:CreateSection("⚡ Humanoid Settings") -- [NEW Label]
+MiscTab:CreateParagraph({Title = "Player Speed", Content = "Adjust your Humanoid Settings."})
+
+MiscTab:CreateSlider({
+   Name = "🏃 Walkspeed",
+   Range = {0, 500},
+   Increment = 1,
+   CurrentValue = 16,
+   Callback = function(Value)
+      LocalPlayer.Character.Humanoid.WalkSpeed = Value
+   end,
+})
+
+MiscTab:CreateToggle({
+   Name = "🔁 Infinite Jump",
+   CurrentValue = false,
+   Callback = function(Value)
+      InfiniteJumpEnabled = Value
+      game:GetService("UserInputService").JumpRequest:Connect(function()
+         if InfiniteJumpEnabled then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+         end
+      end)
+   end,
+})
+
+MiscTab:CreateToggle({
+   Name = "🚪 NoClip (FE)",
+   CurrentValue = false,
+   Callback = function(Value)
+      noclip = Value
+      game:GetService("RunService").Stepped:Connect(function()
+         if LocalPlayer.Character then
+            for _, v in pairs(LocalPlayer.Character:GetChildren()) do
+               if v:IsA("BasePart") then
+                  v.CanCollide = not noclip
+               end
+            end
+         end
+      end)
+   end,
+})
+
+
+function ClearESP()
+    for _, obj in pairs(ESPObjects) do
+        if obj and obj:FindFirstChild("NameTag") then
+            obj.NameTag:Destroy()
+        end
+    end
+    ESPObjects = {}
+end
+
+function UpdateESP()
+    ClearESP()
+    if not ESPEnabled then return end
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+            local billboard = Instance.new("BillboardGui")
+            billboard.Name = "NameTag"
+            billboard.Adornee = player.Character.Head
+            billboard.Size = UDim2.new(0, 100, 0, 20) -- Smaller size
+            billboard.StudsOffset = Vector3.new(0, 2, 0)
+            billboard.AlwaysOnTop = true
+            billboard.Parent = player.Character
+
+            local label = Instance.new("TextLabel", billboard)
+            label.Size = UDim2.new(1, 0, 1, 0)
+            label.Text = player.Name
+            label.BackgroundTransparency = 1
+            label.TextColor3 = Color3.new(1, 1, 1)
+            label.TextStrokeTransparency = 0
+            label.Font = Enum.Font.SourceSansBold
+            label.TextScaled = true
+
+  
