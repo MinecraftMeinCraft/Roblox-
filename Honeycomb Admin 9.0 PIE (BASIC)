@@ -1,10 +1,8 @@
--- Honeycomb 9.0 Pie — Updated Script 🐝🍰
--- Key Features: Command Autosuggestions, macOS-style UI Buttons, Side Dock, Polished Rainbow Theme
+-- Honeycomb 9.0.1 Pie 🐝🍰
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
-local TextChatService = game:GetService("TextChatService")
 local TweenService = game:GetService("TweenService")
 
 local prefix = "+"
@@ -12,115 +10,112 @@ _G.InfiniteJumpEnabled = false
 _G.RainbowMode = false
 _G.Theme = "Pie"
 _G.NoclipEnabled = false
-_G.AdminMinimized = false
 
 -- Theme definitions
 local Themes = {
-    Pie = {
-        Card = Color3.fromRGB(40, 40, 50),
-        Accent = Color3.fromRGB(255, 130, 0),
-        Text = Color3.fromRGB(240, 240, 255),
-        Base = Color3.fromRGB(25, 25, 30),
-        Gradient = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 20)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 60, 60))
-        }
-    },
-    Rainbow = {
-        Card = Color3.fromRGB(30, 30, 35),
-        Accent = Color3.fromHSV(tick() % 1, 1, 1),
-        Text = Color3.new(1, 1, 1),
-        Base = Color3.fromRGB(20, 20, 25),
-        Gradient = ColorSequence.new{
-            ColorSequenceKeypoint.new(0, Color3.fromHSV(0, 1, 1)),
-            ColorSequenceKeypoint.new(1, Color3.fromHSV(0.8, 1, 1))
-        }
-    }
+	Pie = {
+		Card = Color3.fromRGB(40, 40, 50),
+		Accent = Color3.fromRGB(255, 130, 0),
+		Text = Color3.fromRGB(240, 240, 255),
+		Base = Color3.fromRGB(25, 25, 30),
+		Gradient = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 20)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 60, 60))
+		}
+	},
+	Rainbow = {
+		Card = Color3.fromRGB(30, 30, 35),
+		Accent = Color3.fromHSV(tick() % 1, 1, 1),
+		Text = Color3.new(1, 1, 1),
+		Base = Color3.fromRGB(20, 20, 25),
+		Gradient = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, Color3.fromHSV(0, 1, 1)),
+			ColorSequenceKeypoint.new(1, Color3.fromHSV(0.8, 1, 1))
+		}
+	}
 }
 
--- Ripple Effect
-local function rippleEffect(btn, accent)
-    local ripple = Instance.new("Frame")
-    ripple.BackgroundColor3 = accent
-    ripple.BackgroundTransparency = 0.4
-    ripple.Size = UDim2.new(0, 0, 0, 0)
-    ripple.Position = UDim2.new(0.5, 0, 0.5, 0)
-    ripple.AnchorPoint = Vector2.new(0.5, 0.5)
-    ripple.ZIndex = 10
-    ripple.ClipsDescendants = true
-    ripple.Parent = btn
-    local uic = Instance.new("UICorner", ripple)
-    uic.CornerRadius = UDim.new(1, 0)
-    local tween = TweenService:Create(ripple, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {
-        Size = UDim2.new(2, 0, 2, 0), BackgroundTransparency = 1
-    })
-    tween:Play()
-    tween.Completed:Connect(function() ripple:Destroy() end)
-end
-
--- Apply Theme to Frame
 local function applyTheme(frame, themeData)
-    frame.BackgroundColor3 = themeData.Card
-    if frame:FindFirstChild("EdgeShade") then frame.EdgeShade:Destroy() end
-    local shade = Instance.new("UIGradient")
-    shade.Name = "EdgeShade"
-    shade.Color = themeData.Gradient
-    shade.Rotation = 90
-    shade.Parent = frame
+	frame.BackgroundColor3 = themeData.Card
+	if frame:FindFirstChild("EdgeShade") then frame.EdgeShade:Destroy() end
+	local shade = Instance.new("UIGradient")
+	shade.Name = "EdgeShade"
+	shade.Color = themeData.Gradient
+	shade.Rotation = 90
+	shade.Parent = frame
 end
 
--- Command Definitions
+local function rippleEffect(btn, accent)
+	local ripple = Instance.new("Frame")
+	ripple.BackgroundColor3 = accent
+	ripple.BackgroundTransparency = 0.4
+	ripple.Size = UDim2.new(0, 0, 0, 0)
+	ripple.Position = UDim2.new(0.5, 0, 0.5, 0)
+	ripple.AnchorPoint = Vector2.new(0.5, 0.5)
+	ripple.ZIndex = 10
+	ripple.ClipsDescendants = true
+	ripple.Parent = btn
+	local uic = Instance.new("UICorner", ripple)
+	uic.CornerRadius = UDim.new(1, 0)
+	local tween = TweenService:Create(ripple, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {
+		Size = UDim2.new(2, 0, 2, 0), BackgroundTransparency = 1
+	})
+	tween:Play()
+	tween.Completed:Connect(function() ripple:Destroy() end)
+end
+
+-- Command logic
 local validCommands = {
-    ws = "Set WalkSpeed",
-    jp = "Set JumpPower",
-    infjump = "Enable Infinite Jump",
-    uninfjump = "Disable Infinite Jump",
-    prefix = "Change Prefix",
-    noclip = "Enable Noclip",
-    unnoclip = "Disable Noclip"
+	ws = "Set WalkSpeed",
+	jp = "Set JumpPower",
+	infjump = "Enable Infinite Jump",
+	uninfjump = "Disable Infinite Jump",
+	prefix = "Change Prefix",
+	noclip = "Enable Noclip",
+	unnoclip = "Disable Noclip"
 }
 
 local function runCommand(cmd, args)
-    if cmd == "ws" then
-        local v = tonumber(args[1])
-        if v then LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = v end
-    elseif cmd == "jp" then
-        local v = tonumber(args[1])
-        if v then LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = v end
-    elseif cmd == "infjump" then
-        _G.InfiniteJumpEnabled = true
-    elseif cmd == "uninfjump" then
-        _G.InfiniteJumpEnabled = false
-    elseif cmd == "prefix" and args[1] then
-        prefix = args[1]
-    elseif cmd == "noclip" then
-        _G.NoclipEnabled = true
-    elseif cmd == "unnoclip" then
-        _G.NoclipEnabled = false
-    end
+	if cmd == "ws" then
+		local v = tonumber(args[1])
+		if v then Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = v end
+	elseif cmd == "jp" then
+		local v = tonumber(args[1])
+		if v then Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = v end
+	elseif cmd == "infjump" then
+		_G.InfiniteJumpEnabled = true
+	elseif cmd == "uninfjump" then
+		_G.InfiniteJumpEnabled = false
+	elseif cmd == "prefix" and args[1] then
+		prefix = args[1]
+	elseif cmd == "noclip" then
+		_G.NoclipEnabled = true
+	elseif cmd == "unnoclip" then
+		_G.NoclipEnabled = false
+	end
 end
 
 -- Infinite Jump Handler
 LocalPlayer:GetMouse().KeyDown:Connect(function(k)
-    if _G.InfiniteJumpEnabled and k:byte() == 32 then
-        local h = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if h then h:ChangeState("Jumping") wait() h:ChangeState("Seated") end
-    end
+	if _G.InfiniteJumpEnabled and k:byte() == 32 then
+		local h = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+		if h then h:ChangeState("Jumping") wait() h:ChangeState("Seated") end
+	end
 end)
 
--- Noclip Logic
+-- Noclip
 RunService.Stepped:Connect(function()
-    if _G.NoclipEnabled and LocalPlayer.Character then
-        for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") and part.CanCollide then
-                part.CanCollide = false
-            end
-        end
-    end
+	if _G.NoclipEnabled and LocalPlayer.Character then
+		for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
+			if part:IsA("BasePart") then part.CanCollide = false end
+		end
+	end
 end)
 
--- GUI Setup
+-- UI Setup
 local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+gui.Name = "Honeycomb90Pie"
+
 local dock = Instance.new("Frame", gui)
 dock.Size = UDim2.new(0, 60, 1, 0)
 dock.Position = UDim2.new(0, 0, 0, 0)
@@ -131,22 +126,22 @@ dock.Visible = false
 local main = Instance.new("Frame", gui)
 main.Size = UDim2.new(0, 300, 0, 190)
 main.Position = UDim2.new(0.5, -150, 0.4, 0)
-main.Draggable = true
-main.Active = true
 main.Name = "HoneycombMain"
+main.Active = true
+main.Draggable = true
 applyTheme(main, Themes[_G.Theme])
 Instance.new("UICorner", main).CornerRadius = UDim.new(0, 18)
 
--- Title
+-- Top Label
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "🐝 Honeycomb 9.0 - Pie"
+title.Text = "🐝 Honeycomb 9.0.1 - Pie"
 title.BackgroundTransparency = 1
 title.TextColor3 = Themes[_G.Theme].Accent
 title.Font = Enum.Font.GothamSemibold
 title.TextScaled = true
 
--- Textbox
+-- TextBox
 local input = Instance.new("TextBox", main)
 input.Size = UDim2.new(0.9, 0, 0, 35)
 input.Position = UDim2.new(0.05, 0, 0, 50)
@@ -169,17 +164,17 @@ suggestionBox.TextScaled = true
 suggestionBox.Text = "Suggestions: "
 
 input:GetPropertyChangedSignal("Text"):Connect(function()
-    local txt = input.Text:lower()
-    local matches = {}
-    for k, _ in pairs(validCommands) do
-        if k:sub(1, #txt) == txt then
-            table.insert(matches, k)
-        end
-    end
-    suggestionBox.Text = "Suggestions: " .. table.concat(matches, ", ")
+	local txt = input.Text:lower()
+	local matches = {}
+	for k, _ in pairs(validCommands) do
+		if k:sub(1, #txt) == txt then
+			table.insert(matches, k)
+		end
+	end
+	suggestionBox.Text = "Suggestions: " .. table.concat(matches, ", ")
 end)
 
--- Run Button
+-- Run
 local run = Instance.new("TextButton", main)
 run.Size = UDim2.new(0.9, 0, 0, 35)
 run.Position = UDim2.new(0.05, 0, 0, 130)
@@ -189,40 +184,39 @@ run.BackgroundColor3 = Themes[_G.Theme].Accent
 run.Font = Enum.Font.GothamSemibold
 run.TextScaled = true
 Instance.new("UICorner", run).CornerRadius = UDim.new(0, 10)
+
 run.MouseButton1Click:Connect(function()
-    rippleEffect(run, Themes[_G.Theme].Accent)
-    local msg = input.Text
-    if msg:sub(1, #prefix) == prefix then
-        local parts = msg:sub(#prefix + 1):split(" ")
-        local cmd = parts[1]
-        table.remove(parts, 1)
-        runCommand(cmd, parts)
-    end
+	rippleEffect(run, Themes[_G.Theme].Accent)
+	local msg = input.Text
+	if msg:sub(1, #prefix) == prefix then
+		local parts = msg:sub(#prefix + 1):split(" ")
+		local cmd = parts[1]
+		table.remove(parts, 1)
+		runCommand(cmd, parts)
+	end
 end)
 
--- macOS-style Buttons
+-- macOS-style buttons
 for i, mode in ipairs({"Close", "Min", "Dock"}) do
-    local btn = Instance.new("TextButton", main)
-    btn.Size = UDim2.new(0, 16, 0, 16)
-    btn.Position = UDim2.new(0, 8 + (i - 1) * 20, 0, 8)
-    btn.BackgroundColor3 = (mode == "Close" and Color3.fromRGB(255, 80, 80)) or
-                           (mode == "Min" and Color3.fromRGB(255, 220, 0)) or
-                           Color3.fromRGB(80, 200, 255)
-    btn.Text = ""
-    btn.MouseButton1Click:Connect(function()
-        if mode == "Close" then
-            gui:Destroy()
-        elseif mode == "Min" then
-            main.Visible = false
-            dock.Visible = true
-        elseif mode == "Dock" then
-            -- Reserved
-        end
-    end)
-    Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
+	local btn = Instance.new("TextButton", main)
+	btn.Size = UDim2.new(0, 16, 0, 16)
+	btn.Position = UDim2.new(0, 8 + (i - 1) * 20, 0, 8)
+	btn.BackgroundColor3 = (mode == "Close" and Color3.fromRGB(255, 80, 80)) or
+	                       (mode == "Min" and Color3.fromRGB(255, 220, 0)) or
+	                       Color3.fromRGB(80, 200, 255)
+	btn.Text = ""
+	btn.MouseButton1Click:Connect(function()
+		if mode == "Close" then
+			gui:Destroy()
+		elseif mode == "Min" then
+			main.Visible = false
+			dock.Visible = true
+		end
+	end)
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
 end
 
--- Dock Button
+-- Dock button
 local dockBtn = Instance.new("TextButton", dock)
 dockBtn.Size = UDim2.new(1, 0, 0, 40)
 dockBtn.Position = UDim2.new(0, 0, 0, 0)
@@ -231,6 +225,6 @@ dockBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
 dockBtn.TextScaled = true
 Instance.new("UICorner", dockBtn).CornerRadius = UDim.new(0, 12)
 dockBtn.MouseButton1Click:Connect(function()
-    dock.Visible = false
-    main.Visible = true
+	dock.Visible = false
+	main.Visible = true
 end)
