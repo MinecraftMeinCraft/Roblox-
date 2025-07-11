@@ -1,230 +1,240 @@
--- Honeycomb 9.0.1 Pie 🐝🍰
+-- Honeycomb 9.1.1 P+ 🐝🔥🎨 Full Rebuild
 
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local TextChatService = game:GetService("TextChatService")
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
 
+local lp = Players.LocalPlayer
 local prefix = "+"
-_G.InfiniteJumpEnabled = false
-_G.RainbowMode = false
-_G.Theme = "Pie"
-_G.NoclipEnabled = false
+local theme = "pie"
+local rainbowToggle = false
+local flameGradient = nil
+local dragging, dragInput, dragStart, startPos
 
--- Theme definitions
-local Themes = {
-	Pie = {
-		Card = Color3.fromRGB(40, 40, 50),
-		Accent = Color3.fromRGB(255, 130, 0),
-		Text = Color3.fromRGB(240, 240, 255),
-		Base = Color3.fromRGB(25, 25, 30),
-		Gradient = ColorSequence.new{
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 20, 20)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 60, 60))
-		}
-	},
-	Rainbow = {
-		Card = Color3.fromRGB(30, 30, 35),
-		Accent = Color3.fromHSV(tick() % 1, 1, 1),
-		Text = Color3.new(1, 1, 1),
-		Base = Color3.fromRGB(20, 20, 25),
-		Gradient = ColorSequence.new{
-			ColorSequenceKeypoint.new(0, Color3.fromHSV(0, 1, 1)),
-			ColorSequenceKeypoint.new(1, Color3.fromHSV(0.8, 1, 1))
-		}
-	}
+local cmds = {
+    ws = "Set WalkSpeed",
+    jp = "Set JumpPower",
+    infjump = "Enable Infinite Jump",
+    uninfjump = "Disable Infinite Jump",
+    theme = "Change Theme",
+    prefix = "Set Command Prefix",
+    noclip = "Enable Noclip",
+    unnoclip = "Disable Noclip",
+    cmds = "Show all commands"
 }
 
-local function applyTheme(frame, themeData)
-	frame.BackgroundColor3 = themeData.Card
-	if frame:FindFirstChild("EdgeShade") then frame.EdgeShade:Destroy() end
-	local shade = Instance.new("UIGradient")
-	shade.Name = "EdgeShade"
-	shade.Color = themeData.Gradient
-	shade.Rotation = 90
-	shade.Parent = frame
+-- Themes
+local function getTheme()
+    if theme == "pie" then
+        return {
+            Card = Color3.fromRGB(30,30,30),
+            Accent = Color3.fromRGB(255,130,0),
+            Base = Color3.fromRGB(45,45,45),
+            Text = Color3.fromRGB(255,255,255)
+        }
+    elseif theme == "holo" then
+        return {
+            Card = Color3.fromRGB(20,20,30),
+            Accent = Color3.fromRGB(0,255,255),
+            Base = Color3.fromRGB(10,10,20),
+            Text = Color3.fromRGB(200,200,255)
+        }
+    elseif theme == "flame" then
+        return {
+            Card = Color3.fromRGB(20,20,20),
+            Accent = Color3.fromRGB(255,80,0),
+            Base = Color3.fromRGB(30,10,10),
+            Text = Color3.fromRGB(255,255,200)
+        }
+    elseif theme == "rainbow" then
+        return {
+            Card = Color3.fromRGB(20,20,30),
+            Accent = Color3.fromHSV(tick()%5/5, 1, 1),
+            Base = Color3.fromRGB(30,30,30),
+            Text = Color3.new(1,1,1)
+        }
+    end
 end
 
-local function rippleEffect(btn, accent)
-	local ripple = Instance.new("Frame")
-	ripple.BackgroundColor3 = accent
-	ripple.BackgroundTransparency = 0.4
-	ripple.Size = UDim2.new(0, 0, 0, 0)
-	ripple.Position = UDim2.new(0.5, 0, 0.5, 0)
-	ripple.AnchorPoint = Vector2.new(0.5, 0.5)
-	ripple.ZIndex = 10
-	ripple.ClipsDescendants = true
-	ripple.Parent = btn
-	local uic = Instance.new("UICorner", ripple)
-	uic.CornerRadius = UDim.new(1, 0)
-	local tween = TweenService:Create(ripple, TweenInfo.new(0.5, Enum.EasingStyle.Quad), {
-		Size = UDim2.new(2, 0, 2, 0), BackgroundTransparency = 1
-	})
-	tween:Play()
-	tween.Completed:Connect(function() ripple:Destroy() end)
+-- Notify
+local function notify(text)
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "Honeycomb 🐝",
+        Text = text,
+        Duration = 4
+    })
 end
 
--- Command logic
-local validCommands = {
-	ws = "Set WalkSpeed",
-	jp = "Set JumpPower",
-	infjump = "Enable Infinite Jump",
-	uninfjump = "Disable Infinite Jump",
-	prefix = "Change Prefix",
-	noclip = "Enable Noclip",
-	unnoclip = "Disable Noclip"
-}
+-- UI setup
+local gui = Instance.new("ScreenGui", lp:WaitForChild("PlayerGui"))
+gui.Name = "Honeycomb"
+gui.ResetOnSpawn = false
 
+local frame = Instance.new("Frame", gui)
+frame.Name = "HoneycombMain"
+frame.Size = UDim2.new(0, 300, 0, 170)
+frame.Position = UDim2.new(0.5, -150, 0.4, 0)
+frame.BackgroundColor3 = getTheme().Card
+frame.BorderSizePixel = 0
+
+local corner = Instance.new("UICorner", frame)
+corner.CornerRadius = UDim.new(0, 12)
+
+local label = Instance.new("TextLabel", frame)
+label.Size = UDim2.new(1, 0, 0, 25)
+label.Text = "🐝 Honeycomb 9.1.1 P+"
+label.TextColor3 = getTheme().Accent
+label.Font = Enum.Font.GothamSemibold
+label.BackgroundTransparency = 1
+label.TextScaled = true
+
+local input = Instance.new("TextBox", frame)
+input.PlaceholderText = prefix.."ws 80"
+input.Position = UDim2.new(0.05, 0, 0, 40)
+input.Size = UDim2.new(0.9, 0, 0, 30)
+input.BackgroundColor3 = getTheme().Base
+input.TextColor3 = getTheme().Text
+input.Font = Enum.Font.Gotham
+input.TextScaled = true
+input.Text = ""
+Instance.new("UICorner", input).CornerRadius = UDim.new(0, 8)
+
+-- Suggestion label
+local suggest = Instance.new("TextLabel", frame)
+suggest.Size = UDim2.new(0.9, 0, 0, 25)
+suggest.Position = UDim2.new(0.05, 0, 0, 75)
+suggest.BackgroundTransparency = 1
+suggest.TextColor3 = Color3.fromRGB(180,180,180)
+suggest.Font = Enum.Font.Gotham
+suggest.TextScaled = true
+suggest.Text = "Suggestions:"
+
+-- Command suggestions logic
+input:GetPropertyChangedSignal("Text"):Connect(function()
+    local txt = input.Text:lower()
+    local found = {}
+    for c, _ in pairs(cmds) do
+        if c:sub(1, #txt) == txt then table.insert(found, c) end
+    end
+    suggest.Text = "Suggestions: "..table.concat(found, ", ")
+end)
+
+-- Run button
+local run = Instance.new("TextButton", frame)
+run.Position = UDim2.new(0.05, 0, 0, 110)
+run.Size = UDim2.new(0.9, 0, 0, 30)
+run.Text = "Run"
+run.TextColor3 = getTheme().Text
+run.BackgroundColor3 = getTheme().Accent
+run.Font = Enum.Font.GothamBold
+run.TextScaled = true
+Instance.new("UICorner", run).CornerRadius = UDim.new(0, 8)
+
+-- Draggable
+local function makeDraggable(obj)
+	obj.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = obj.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	obj.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInput = input
+		end
+	end)
+
+	UIS.InputChanged:Connect(function(input)
+		if input == dragInput and dragging then
+			local delta = input.Position - dragStart
+			obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+end
+makeDraggable(frame)
+
+-- Command system
 local function runCommand(cmd, args)
 	if cmd == "ws" then
 		local v = tonumber(args[1])
-		if v then Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = v end
+		if v then lp.Character.Humanoid.WalkSpeed = v end
 	elseif cmd == "jp" then
 		local v = tonumber(args[1])
-		if v then Players.LocalPlayer.Character:FindFirstChildOfClass("Humanoid").JumpPower = v end
+		if v then lp.Character.Humanoid.JumpPower = v end
 	elseif cmd == "infjump" then
-		_G.InfiniteJumpEnabled = true
+		_G.InfJump = true
 	elseif cmd == "uninfjump" then
-		_G.InfiniteJumpEnabled = false
-	elseif cmd == "prefix" and args[1] then
-		prefix = args[1]
+		_G.InfJump = false
 	elseif cmd == "noclip" then
-		_G.NoclipEnabled = true
+		_G.Noclip = true
 	elseif cmd == "unnoclip" then
-		_G.NoclipEnabled = false
+		_G.Noclip = false
+	elseif cmd == "theme" then
+		if args[1] then
+			theme = args[1]:lower()
+			frame.BackgroundColor3 = getTheme().Card
+			input.BackgroundColor3 = getTheme().Base
+			input.TextColor3 = getTheme().Text
+			label.TextColor3 = getTheme().Accent
+			run.BackgroundColor3 = getTheme().Accent
+		end
+	elseif cmd == "prefix" then
+		if args[1] then prefix = args[1] end
+	elseif cmd == "cmds" then
+		local all = {}
+		for c, d in pairs(cmds) do
+			table.insert(all, "+"..c.." - "..d)
+		end
+		for i = 1, #all, 3 do
+			local part = table.concat({all[i], all[i+1], all[i+2]}, "\n")
+			notify(part)
+		end
+	else
+		notify("Unknown command: "..cmd)
 	end
 end
 
--- Infinite Jump Handler
-LocalPlayer:GetMouse().KeyDown:Connect(function(k)
-	if _G.InfiniteJumpEnabled and k:byte() == 32 then
-		local h = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-		if h then h:ChangeState("Jumping") wait() h:ChangeState("Seated") end
+run.MouseButton1Click:Connect(function()
+    local msg = input.Text
+    if msg:sub(1, #prefix) == prefix then
+        local args = msg:sub(#prefix+1):split(" ")
+        local cmd = table.remove(args,1)
+        runCommand(cmd, args)
+    end
+end)
+
+-- ChatCommand Handler
+TextChatService.OnIncomingMessage = function(msg)
+	local txt = msg.Text
+	if txt and txt:sub(1,#prefix)==prefix then
+		local args = txt:sub(#prefix+1):split(" ")
+		local cmd = table.remove(args,1)
+		runCommand(cmd, args)
+	end
+end
+
+-- InfJump handler
+UIS.JumpRequest:Connect(function()
+	if _G.InfJump and lp.Character and lp.Character:FindFirstChildOfClass("Humanoid") then
+		local h = lp.Character:FindFirstChildOfClass("Humanoid")
+		h:ChangeState("Jumping") wait() h:ChangeState("Seated")
 	end
 end)
 
 -- Noclip
-RunService.Stepped:Connect(function()
-	if _G.NoclipEnabled and LocalPlayer.Character then
-		for _, part in ipairs(LocalPlayer.Character:GetDescendants()) do
-			if part:IsA("BasePart") then part.CanCollide = false end
+RS.Stepped:Connect(function()
+	if _G.Noclip and lp.Character then
+		for _,v in pairs(lp.Character:GetDescendants()) do
+			if v:IsA("BasePart") then v.CanCollide = false end
 		end
 	end
-end)
-
--- UI Setup
-local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
-gui.Name = "Honeycomb90Pie"
-
-local dock = Instance.new("Frame", gui)
-dock.Size = UDim2.new(0, 60, 1, 0)
-dock.Position = UDim2.new(0, 0, 0, 0)
-dock.BackgroundTransparency = 0.4
-dock.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-dock.Visible = false
-
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 300, 0, 190)
-main.Position = UDim2.new(0.5, -150, 0.4, 0)
-main.Name = "HoneycombMain"
-main.Active = true
-main.Draggable = true
-applyTheme(main, Themes[_G.Theme])
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 18)
-
--- Top Label
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "🐝 Honeycomb 9.0.1 - Pie"
-title.BackgroundTransparency = 1
-title.TextColor3 = Themes[_G.Theme].Accent
-title.Font = Enum.Font.GothamSemibold
-title.TextScaled = true
-
--- TextBox
-local input = Instance.new("TextBox", main)
-input.Size = UDim2.new(0.9, 0, 0, 35)
-input.Position = UDim2.new(0.05, 0, 0, 50)
-input.PlaceholderText = prefix .. "ws 80"
-input.Text = ""
-input.BackgroundColor3 = Themes[_G.Theme].Base
-input.TextColor3 = Themes[_G.Theme].Text
-input.Font = Enum.Font.Gotham
-input.TextScaled = true
-Instance.new("UICorner", input).CornerRadius = UDim.new(0, 10)
-
--- Suggestions
-local suggestionBox = Instance.new("TextLabel", main)
-suggestionBox.Size = UDim2.new(0.9, 0, 0, 40)
-suggestionBox.Position = UDim2.new(0.05, 0, 0, 85)
-suggestionBox.BackgroundTransparency = 1
-suggestionBox.TextColor3 = Color3.fromRGB(170, 170, 170)
-suggestionBox.Font = Enum.Font.Gotham
-suggestionBox.TextScaled = true
-suggestionBox.Text = "Suggestions: "
-
-input:GetPropertyChangedSignal("Text"):Connect(function()
-	local txt = input.Text:lower()
-	local matches = {}
-	for k, _ in pairs(validCommands) do
-		if k:sub(1, #txt) == txt then
-			table.insert(matches, k)
-		end
-	end
-	suggestionBox.Text = "Suggestions: " .. table.concat(matches, ", ")
-end)
-
--- Run
-local run = Instance.new("TextButton", main)
-run.Size = UDim2.new(0.9, 0, 0, 35)
-run.Position = UDim2.new(0.05, 0, 0, 130)
-run.Text = "Run Command"
-run.TextColor3 = Themes[_G.Theme].Text
-run.BackgroundColor3 = Themes[_G.Theme].Accent
-run.Font = Enum.Font.GothamSemibold
-run.TextScaled = true
-Instance.new("UICorner", run).CornerRadius = UDim.new(0, 10)
-
-run.MouseButton1Click:Connect(function()
-	rippleEffect(run, Themes[_G.Theme].Accent)
-	local msg = input.Text
-	if msg:sub(1, #prefix) == prefix then
-		local parts = msg:sub(#prefix + 1):split(" ")
-		local cmd = parts[1]
-		table.remove(parts, 1)
-		runCommand(cmd, parts)
-	end
-end)
-
--- macOS-style buttons
-for i, mode in ipairs({"Close", "Min", "Dock"}) do
-	local btn = Instance.new("TextButton", main)
-	btn.Size = UDim2.new(0, 16, 0, 16)
-	btn.Position = UDim2.new(0, 8 + (i - 1) * 20, 0, 8)
-	btn.BackgroundColor3 = (mode == "Close" and Color3.fromRGB(255, 80, 80)) or
-	                       (mode == "Min" and Color3.fromRGB(255, 220, 0)) or
-	                       Color3.fromRGB(80, 200, 255)
-	btn.Text = ""
-	btn.MouseButton1Click:Connect(function()
-		if mode == "Close" then
-			gui:Destroy()
-		elseif mode == "Min" then
-			main.Visible = false
-			dock.Visible = true
-		end
-	end)
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
-end
-
--- Dock button
-local dockBtn = Instance.new("TextButton", dock)
-dockBtn.Size = UDim2.new(1, 0, 0, 40)
-dockBtn.Position = UDim2.new(0, 0, 0, 0)
-dockBtn.Text = "🐝"
-dockBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-dockBtn.TextScaled = true
-Instance.new("UICorner", dockBtn).CornerRadius = UDim.new(0, 12)
-dockBtn.MouseButton1Click:Connect(function()
-	dock.Visible = false
-	main.Visible = true
 end)
